@@ -31,38 +31,41 @@ if __name__ == '__main__':
        'hammer',
        'plastic_cup',
        'soda_can']
+ 
+    nbins_versions = [32]
 
     # Disable gravity and delete the ground plane
     initial_setup()
     labeled_features = []
+    for index, nbins in enumerate(nbins_versions):
+        for index2, model_name in enumerate(models):
+            spawn_model(model_name)
+            nums = 1000
 
-    for model_name in models:
-        spawn_model(model_name)
+            for i in range(nums):
+                print(str(nbins) + " (" + str(index+1) + "/" + str(len(nbins_versions)) + ") -- " + model_name + " ( " + str(index2+1) + "/" + str(len(models)) + " ): " + str(i+1) + " / " + str(nums))
+                # make five attempts to get a valid a point cloud then give up
+                sample_was_good = False
+                try_count = 0
+                while not sample_was_good and try_count < 5:
+                    sample_cloud = capture_sample()
+                    sample_cloud_arr = ros_to_pcl(sample_cloud).to_array()
 
-        for i in range(5):
-            # make five attempts to get a valid a point cloud then give up
-            sample_was_good = False
-            try_count = 0
-            while not sample_was_good and try_count < 5:
-                sample_cloud = capture_sample()
-                sample_cloud_arr = ros_to_pcl(sample_cloud).to_array()
+                    # Check for invalid clouds.
+                    if sample_cloud_arr.shape[0] == 0:
+                        print('Invalid cloud detected')
+                        try_count += 1
+                    else:
+                        sample_was_good = True
 
-                # Check for invalid clouds.
-                if sample_cloud_arr.shape[0] == 0:
-                    print('Invalid cloud detected')
-                    try_count += 1
-                else:
-                    sample_was_good = True
+                # Extract histogram features
+                chists = compute_color_histograms(sample_cloud, nbins, using_hsv=True)
+                normals = get_normals(sample_cloud)
+                nhists = compute_normal_histograms(normals, nbins)
+                feature = np.concatenate((chists, nhists))
+                labeled_features.append([feature, model_name])
 
-            # Extract histogram features
-            chists = compute_color_histograms(sample_cloud, using_hsv=False)
-            normals = get_normals(sample_cloud)
-            nhists = compute_normal_histograms(normals)
-            feature = np.concatenate((chists, nhists))
-            labeled_features.append([feature, model_name])
-
-        delete_model()
+            delete_model()
 
 
-    pickle.dump(labeled_features, open('training_set.sav', 'wb'))
-
+        pickle.dump(labeled_features, open('training_set'+str(nbins)+'.sav', 'wb'))

@@ -31,6 +31,16 @@ if __name__ == '__main__':
        'hammer',
        'plastic_cup',
        'soda_can']
+    
+    project_models = [\
+       'biscuits',
+       'soap',
+       'soap2',
+       'book',
+       'glue',
+       'sticky_notes',
+       'snacks',
+       'eraser']
  
     nbins_versions = [32]
 
@@ -38,7 +48,7 @@ if __name__ == '__main__':
     initial_setup()
     labeled_features = []
     for index, nbins in enumerate(nbins_versions):
-        for index2, model_name in enumerate(models):
+        for index2, model_name in enumerate(project_models):
             spawn_model(model_name)
             nums = 1000
 
